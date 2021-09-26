@@ -1,0 +1,4 @@
+.. automodule:: binarymap.binarymap
+   :members:
+   :undoc-members:
+   :show-inheritance:
