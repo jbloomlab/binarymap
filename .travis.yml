@@ -18,3 +18,6 @@ script:
 branches:
   only:
     - master
+
+notifications:
+  slack: jbloomlab:VBYeOdkocGjITELIzAlV7esY
