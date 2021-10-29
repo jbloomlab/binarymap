@@ -76,6 +76,11 @@ class BinaryMap:
         corresponding attribute is set to `None`.
     alphabet : list or tuple
         Allowed characters (e.g., amino acids or codons).
+    allowed_subs : array-like
+        The created binary map will include exactly this set of substitutions,
+        and error will be raised if attempts to initialize with variant
+        containing substitution not in this set. Incompatible with ``expand``
+        option.
     expand : bool
         If `False` (the default) the encoding only covers substitutions
         relative to wildtype that are observed in the set of variants. If
@@ -309,6 +314,7 @@ class BinaryMap:
                  n_post_col='post_count',
                  cols_optional=True,
                  alphabet=AAS_WITHSTOP,
+                 allowed_subs=None,
                  expand=False,
                  wtseq=None,
                  ):
@@ -369,21 +375,18 @@ class BinaryMap:
         muts = collections.defaultdict(set)
         for subs in substitutions:
             for sub in subs.split():
-                m = re.fullmatch(self._sub_regex, sub)
-                if not m:
-                    raise ValueError(f"could not match substitution: {sub}")
-                site = int(m.group('site'))
+                wt, site, mut = self._parse_sub_str(sub)
                 if site not in wts:
-                    wts[site] = m.group('wt')
-                elif m.group('wt') != wts[site]:
+                    wts[site] = wt
+                elif wt != wts[site]:
                     raise ValueError(f"different wildtypes at {site}:\n"
-                                     f"{m.group('wt')} versus {wts[site]}")
-                if m.group('mut') == wts[site]:
-                    raise ValueError(f"wildtype and mutant the same in {sub}")
-                muts[site].add(m.group('mut'))
+                                     f"{wt} versus {wts[site]}")
+                muts[site].add(mut)
         self._i_to_sub = {}
         self._wt_indices = {}  # keyed by site, values wildtype indices
         if expand:
+            if allowed_subs is not None:
+                raise ValueError('cannot use both `expand` and `allowed_subs`')
             if not isinstance(wtseq, str):
                 raise ValueError('`wtseq` must be str if `expand` is True')
             if not set(wtseq).issubset(set(alphabet)):
@@ -467,19 +470,25 @@ class BinaryMap:
         sites = set()
         indices = []
         for sub in sub_str.split():
-            m = re.fullmatch(self._sub_regex, sub)
-            if not m:
-                raise ValueError(f"substitution {sub} in {sub_str} invalid "
-                                 f"for alphabet {self.alphabet}")
-            if m.group('site') in sites:
+            wt, site, mut = self._parse_sub_str(sub)
+            if site in sites:
                 raise ValueError("multiple subs at same site in {sub_str}")
-            sites.add(m.group('site'))
+            sites.add(site)
             indices.append(self.sub_to_i(sub))
-        sites = {int(site) for site in sites}
         for site, i in self._wt_indices.items():
             if site not in sites:
                 indices.append(i)
         return sorted(indices)
+
+    def _parse_sub_str(self, sub):
+        """Parse substitution string to `(wt, site, mut)`."""
+        m = re.fullmatch(self._sub_regex, sub)
+        if not m:
+            raise ValueError(f"substitution {sub} is invalid "
+                             f"for alphabet {self.alphabet}")
+        if m.group('wt') == m.group('mut'):
+            raise ValueError(f"wildtype and mutant identity the same in {sub}")
+        return (m.group('wt'), int(m.group('site')), m.group('mut'))
 
     def binary_to_sub_str(self, binary):
         """Convert binary representation to space-delimited substitutions.
@@ -505,7 +514,7 @@ class BinaryMap:
         if not set(binary).issubset({0, 1}):
             raise ValueError(f"`binary` not all 0 or 1:\n{binary}")
         subs = [s for s in map(self.i_to_sub, numpy.flatnonzero(binary)) if s]
-        sites = [re.fullmatch(self._sub_regex, sub) for sub in subs]
+        sites = [self._parse_sub_str(sub)[1] for sub in subs]
         if len(sites) != len(set(sites)):
             raise ValueError('`binary` specifies multiple substitutions '
                              f"at same site:\n{binary}\n{' '.join(subs)}")
