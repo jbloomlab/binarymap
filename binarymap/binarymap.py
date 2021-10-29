@@ -188,6 +188,19 @@ class BinaryMap:
     [3, 4]
     [2]
 
+    Specify allowed substitutions including one not in ``func_scores_df``:
+
+    >>> allowed_subs = ['K3G', 'M1A', 'M1C', 'A2C', 'A2*', 'K3A']
+    >>> BinaryMap(func_scores_df, allowed_subs=allowed_subs).all_subs
+    ['M1A', 'M1C', 'A2*', 'A2C', 'K3A', 'K3G']
+
+    But we cannot initialize if all substitutions not in ``allowed_subs``:
+
+    >>> BinaryMap(func_scores_df, allowed_subs=['M1A', 'M1C', 'A2*'])
+    Traceback (most recent call last):
+      ...
+    ValueError: substitutions not in `allowed_subs`: ['A2C', 'K3A']
+
     Now do similar operation but using `expand` to include full alphabet
     (although to keep size manageable, we use an alphabet smaller than
     all amino acids):
@@ -373,15 +386,22 @@ class BinaryMap:
         # build mapping from substitution to binary map index
         wts = {}
         muts = collections.defaultdict(set)
-        for subs in substitutions:
-            for sub in subs.split():
-                wt, site, mut = self._parse_sub_str(sub)
-                if site not in wts:
-                    wts[site] = wt
-                elif wt != wts[site]:
-                    raise ValueError(f"different wildtypes at {site}:\n"
-                                     f"{wt} versus {wts[site]}")
-                muts[site].add(mut)
+        subs_in_variants = {s for subs in substitutions for s in subs.split()}
+        if allowed_subs is not None:
+            allowed_subs = set(allowed_subs)
+            extra_subs = sorted(subs_in_variants - allowed_subs)
+            if extra_subs:
+                raise ValueError('substitutions not in `allowed_subs`: '
+                                 f"{extra_subs}")
+            subs_in_variants = allowed_subs
+        for sub in subs_in_variants:
+            wt, site, mut = self._parse_sub_str(sub)
+            if site not in wts:
+                wts[site] = wt
+            elif wt != wts[site]:
+                raise ValueError(f"different wildtypes at {site}:\n"
+                                 f"{wt} versus {wts[site]}")
+            muts[site].add(mut)
         self._i_to_sub = {}
         self._wt_indices = {}  # keyed by site, values wildtype indices
         if expand:
