@@ -492,7 +492,7 @@ class BinaryMap:
         for sub in sub_str.split():
             wt, site, mut = self._parse_sub_str(sub)
             if site in sites:
-                raise ValueError("multiple subs at same site in {sub_str}")
+                raise ValueError(f"multiple subs at same site in {sub_str}")
             sites.add(site)
             indices.append(self.sub_to_i(sub))
         for site, i in self._wt_indices.items():
