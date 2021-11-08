@@ -105,6 +105,9 @@ class BinaryMap:
         if the variant has the substitution :meth:`BinaryMap.i_to_sub`
         and 0 otherwise. To convert to dense `numpy.ndarray`, use
         `toarray` method of the sparse matrix.
+    binary_sites : numpy.ndarray of dtype int
+        Array of length `binarylength` giving the site number corresponding
+        to each mutation in the binary order.
     substitution_variants : list
         All variants as substitution strings as provided in `substitutions_col`
         of `func_scores_df`.
@@ -140,12 +143,15 @@ class BinaryMap:
     >>> binmap = BinaryMap(func_scores_df)
 
     The length of the binary representation equals the number of unique
-    substitutions:
+    substitutions, and we can also see which entries correspond to which
+    substitution:
 
     >>> binmap.binarylength
     5
     >>> binmap.all_subs
     ['M1A', 'M1C', 'A2*', 'A2C', 'K3A']
+    >>> binmap.binary_sites
+    array([1, 1, 2, 2, 3])
 
     Scores, score variances, binary and string representations:
 
@@ -213,6 +219,9 @@ class BinaryMap:
     ...                           wtseq=wtseq)
     >>> binmap_expand.binarylength == len(wtseq) * len(alphabet)
     True
+    >>> binmap_expand.binary_sites
+    array([1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4,
+           4, 4])
 
     >>> binmap_expand.all_subs
     ... # doctest: +NORMALIZE_WHITESPACE
@@ -404,6 +413,7 @@ class BinaryMap:
             muts[site].add(mut)
         self._i_to_sub = {}
         self._wt_indices = {}  # keyed by site, values wildtype indices
+        self.binary_sites = []
         if expand:
             if allowed_subs is not None:
                 raise ValueError('cannot use both `expand` and `allowed_subs`')
@@ -423,6 +433,7 @@ class BinaryMap:
             for site, wt in enumerate(wtseq, start=1):
                 assert (site not in wts) or (wts[site] == wt)
                 for char in self.alphabet:
+                    self.binary_sites.append(site)
                     self._i_to_sub[i] = f"{wt}{site}{char}"
                     if char == wt:
                         assert site not in self._wt_indices
@@ -434,9 +445,11 @@ class BinaryMap:
             i = 0
             for site, wt in sorted(wts.items()):
                 for mut in sorted(muts[site]):
+                    self.binary_sites.append(site)
                     self._i_to_sub[i] = f"{wt}{site}{mut}"
                     i += 1
         self.binarylength = len(self._i_to_sub)
+        self.binary_sites = numpy.array(self.binary_sites, dtype=int)
         self._sub_to_i = {sub: i for i, sub in self._i_to_sub.items()}
         self._wt_index_set = set(self._wt_indices.values())
         assert len(self._sub_to_i) == len(self._i_to_sub) == self.binarylength
@@ -492,7 +505,7 @@ class BinaryMap:
         for sub in sub_str.split():
             wt, site, mut = self._parse_sub_str(sub)
             if site in sites:
-                raise ValueError("multiple subs at same site in {sub_str}")
+                raise ValueError(f"multiple subs at same site in {sub_str}")
             sites.add(site)
             indices.append(self.sub_to_i(sub))
         for site, i in self._wt_indices.items():
