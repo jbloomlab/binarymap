@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>binarymap.binarymap &#8212; binarymap 0.2 documentation</title>
+    <title>binarymap.binarymap &#8212; binarymap 0.3 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -140,6 +140,9 @@
 <span class="sd">        if the variant has the substitution :meth:`BinaryMap.i_to_sub`</span>
 <span class="sd">        and 0 otherwise. To convert to dense `numpy.ndarray`, use</span>
 <span class="sd">        `toarray` method of the sparse matrix.</span>
+<span class="sd">    binary_sites : numpy.ndarray of dtype int</span>
+<span class="sd">        Array of length `binarylength` giving the site number corresponding</span>
+<span class="sd">        to each mutation in the binary order.</span>
 <span class="sd">    substitution_variants : list</span>
 <span class="sd">        All variants as substitution strings as provided in `substitutions_col`</span>
 <span class="sd">        of `func_scores_df`.</span>
@@ -175,12 +178,15 @@
 <span class="sd">    &gt;&gt;&gt; binmap = BinaryMap(func_scores_df)</span>
 
 <span class="sd">    The length of the binary representation equals the number of unique</span>
-<span class="sd">    substitutions:</span>
+<span class="sd">    substitutions, and we can also see which entries correspond to which</span>
+<span class="sd">    substitution:</span>
 
 <span class="sd">    &gt;&gt;&gt; binmap.binarylength</span>
 <span class="sd">    5</span>
 <span class="sd">    &gt;&gt;&gt; binmap.all_subs</span>
 <span class="sd">    [&#39;M1A&#39;, &#39;M1C&#39;, &#39;A2*&#39;, &#39;A2C&#39;, &#39;K3A&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; binmap.binary_sites</span>
+<span class="sd">    array([1, 1, 2, 2, 3])</span>
 
 <span class="sd">    Scores, score variances, binary and string representations:</span>
 
@@ -248,6 +254,9 @@
 <span class="sd">    ...                           wtseq=wtseq)</span>
 <span class="sd">    &gt;&gt;&gt; binmap_expand.binarylength == len(wtseq) * len(alphabet)</span>
 <span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; binmap_expand.binary_sites</span>
+<span class="sd">    array([1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4,</span>
+<span class="sd">           4, 4])</span>
 
 <span class="sd">    &gt;&gt;&gt; binmap_expand.all_subs</span>
 <span class="sd">    ... # doctest: +NORMALIZE_WHITESPACE</span>
@@ -439,6 +448,7 @@
             <span class="n">muts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">mut</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wt_indices</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># keyed by site, values wildtype indices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">expand</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">allowed_subs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot use both `expand` and `allowed_subs`&#39;</span><span class="p">)</span>
@@ -458,6 +468,7 @@
             <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">wt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wtseq</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
                 <span class="k">assert</span> <span class="p">(</span><span class="n">site</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wts</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">wts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">==</span> <span class="n">wt</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wt</span><span class="si">}{</span><span class="n">site</span><span class="si">}{</span><span class="n">char</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="n">wt</span><span class="p">:</span>
                         <span class="k">assert</span> <span class="n">site</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wt_indices</span>
@@ -469,9 +480,11 @@
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">wt</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wts</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
                 <span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">muts</span><span class="p">[</span><span class="n">site</span><span class="p">]):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wt</span><span class="si">}{</span><span class="n">site</span><span class="si">}{</span><span class="n">mut</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sub_to_i</span> <span class="o">=</span> <span class="p">{</span><span class="n">sub</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sub</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wt_index_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wt_indices</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sub_to_i</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span>
@@ -527,7 +540,7 @@
         <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">sub_str</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
             <span class="n">wt</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">mut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_sub_str</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;multiple subs at same site in </span><span class="si">{sub_str}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;multiple subs at same site in </span><span class="si">{</span><span class="n">sub_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">sites</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
             <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sub_to_i</span><span class="p">(</span><span class="n">sub</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wt_indices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
