@@ -104,7 +104,7 @@ class BinaryMap:
         Length of the binary representation of each variant.
     nvariants : int
         Number of variants.
-    binary_variants : scipy.sparse.csr.csr_matrix of dtype int8
+    binary_variants : scipy.sparse.csr_matrix of dtype int8
         Sparse matrix of shape `nvariants` by `binarylength`. Row
         `binary_variants[ivariant]` gives the binary representation of
         variant `ivariant`, and `binary_variants[ivariant, i]` is 1
@@ -167,8 +167,8 @@ class BinaryMap:
     array([ 0.  , -0.2 , -0.4 ,  0.01, -0.05, -1.2 ])
     >>> binmap.func_scores_var
     array([0.2 , 0.1 , 0.3 , 0.15, 0.1 , 0.4 ])
-    >>> type(binmap.binary_variants)
-    <class 'scipy.sparse.csr.csr_matrix'>
+    >>> type(binmap.binary_variants) == scipy.sparse.csr_matrix
+    True
     >>> binmap.binary_variants.toarray()
     array([[0, 0, 0, 0, 0],
            [1, 0, 0, 0, 0],
@@ -330,7 +330,7 @@ class BinaryMap:
                 elif isinstance(val, numpy.ndarray):
                     if not numpy.array_equal(val, val2):
                         return False
-                elif isinstance(val, scipy.sparse.csr.csr_matrix):
+                elif isinstance(val, scipy.sparse.csr_matrix):
                     if (val - val2).nnz:
                         return False
                 elif isinstance(val, (pd.DataFrame, pd.Series)):
