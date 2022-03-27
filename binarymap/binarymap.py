@@ -35,6 +35,12 @@ AAS_NOSTOP = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
 AAS_WITHSTOP = tuple(list(AAS_NOSTOP) + ['*'])
 """tuple: Amino-acid one-letter codes alphabetized plus stop as ``*``."""
 
+AAS_WITHGAP = tuple(list(AAS_NOSTOP) + ['-'])
+"""tuple: Amino-acid one-letter codes alphabetized plus gap as ``-``."""
+
+AAS_WITHSTOP_WITHGAP = tuple(list(AAS_WITHSTOP) + ['-'])
+"""tuple: Amino-acid one-letter codes plus stop as ``*`` and gap as ``-``."""
+
 
 class BinaryMap:
     r"""Binary representations of variants and their functional scores.
@@ -98,7 +104,7 @@ class BinaryMap:
         Length of the binary representation of each variant.
     nvariants : int
         Number of variants.
-    binary_variants : scipy.sparse.csr.csr_matrix of dtype int8
+    binary_variants : scipy.sparse.csr_matrix of dtype int8
         Sparse matrix of shape `nvariants` by `binarylength`. Row
         `binary_variants[ivariant]` gives the binary representation of
         variant `ivariant`, and `binary_variants[ivariant, i]` is 1
@@ -149,7 +155,7 @@ class BinaryMap:
     >>> binmap.binarylength
     5
     >>> binmap.all_subs
-    ['M1A', 'M1C', 'A2*', 'A2C', 'K3A']
+    ['M1A', 'M1C', 'A2C', 'A2*', 'K3A']
     >>> binmap.binary_sites
     array([1, 1, 2, 2, 3])
 
@@ -161,15 +167,15 @@ class BinaryMap:
     array([ 0.  , -0.2 , -0.4 ,  0.01, -0.05, -1.2 ])
     >>> binmap.func_scores_var
     array([0.2 , 0.1 , 0.3 , 0.15, 0.1 , 0.4 ])
-    >>> type(binmap.binary_variants)
-    <class 'scipy.sparse.csr.csr_matrix'>
+    >>> type(binmap.binary_variants) == scipy.sparse.csr_matrix
+    True
     >>> binmap.binary_variants.toarray()
     array([[0, 0, 0, 0, 0],
            [1, 0, 0, 0, 0],
            [0, 1, 0, 0, 1],
            [0, 0, 0, 0, 0],
-           [0, 0, 0, 1, 1],
-           [0, 0, 1, 0, 0]], dtype=int8)
+           [0, 0, 1, 0, 1],
+           [0, 0, 0, 1, 0]], dtype=int8)
     >>> binmap.substitution_variants
     ['', 'M1A', 'M1C K3A', '', 'A2C K3A', 'A2*']
     >>> binmap.substitutions_col
@@ -191,14 +197,14 @@ class BinaryMap:
     [0]
     [1, 4]
     []
-    [3, 4]
-    [2]
+    [2, 4]
+    [3]
 
     Specify allowed substitutions including one not in ``func_scores_df``:
 
     >>> allowed_subs = ['K3G', 'M1A', 'M1C', 'A2C', 'A2*', 'K3A']
     >>> BinaryMap(func_scores_df, allowed_subs=allowed_subs).all_subs
-    ['M1A', 'M1C', 'A2*', 'A2C', 'K3A', 'K3G']
+    ['M1A', 'M1C', 'A2C', 'A2*', 'K3A', 'K3G']
 
     But we cannot initialize if all substitutions not in ``allowed_subs``:
 
@@ -283,6 +289,15 @@ class BinaryMap:
     >>> binmap_counts.n_post
     array([ 0,  3, 12, 11,  9,  8])
 
+    Use an alphabet that allows gaps:
+
+    >>> func_scores_gap_df = func_scores_df.append(
+    ...     pd.DataFrame([("M1-", 0, 0.1)], columns=func_scores_df.columns)
+    ... )
+    >>> bmap_gap = BinaryMap(func_scores_gap_df, alphabet=AAS_WITHSTOP_WITHGAP)
+    >>> bmap_gap.all_subs
+    ['M1A', 'M1C', 'M1-', 'A2C', 'A2*', 'K3A']
+
     """
 
     def __eq__(self, other):
@@ -315,7 +330,7 @@ class BinaryMap:
                 elif isinstance(val, numpy.ndarray):
                     if not numpy.array_equal(val, val2):
                         return False
-                elif isinstance(val, scipy.sparse.csr.csr_matrix):
+                elif isinstance(val, scipy.sparse.csr_matrix):
                     if (val - val2).nnz:
                         return False
                 elif isinstance(val, (pd.DataFrame, pd.Series)):
@@ -385,6 +400,8 @@ class BinaryMap:
                 chars.append(char)
             elif char == '*':
                 chars.append(r'\*')
+            elif char == "-":
+                chars.append(r"\-")
             else:
                 raise ValueError(f"invalid alphabet character: {char}")
         chars = '|'.join(chars)
@@ -443,8 +460,9 @@ class BinaryMap:
             if wtseq is not None:
                 raise ValueError('`wtseq` should be None if `expand` is False')
             i = 0
+            char_order = {c: i for i, c in enumerate(self.alphabet)}
             for site, wt in sorted(wts.items()):
-                for mut in sorted(muts[site]):
+                for mut in sorted(muts[site], key=lambda m: char_order[m[-1]]):
                     self.binary_sites.append(site)
                     self._i_to_sub[i] = f"{wt}{site}{mut}"
                     i += 1
