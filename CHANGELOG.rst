@@ -8,8 +8,11 @@ The format is based on `Keep a Changelog <https://keepachangelog.com>`_.
 
 0.4
 ---
-Gaps are now allowed in ``allowed_subs`` as a ``-`` character.
-Also added ``AAS_NOSTOP_WITHGAP`` and ``AAS_WITHSTOP_WITHGAP``.
+- Gaps are now allowed in ``allowed_subs`` as a ``-`` character.
+
+- Added ``AAS_NOSTOP_WITHGAP`` and ``AAS_WITHSTOP_WITHGAP``.
+
+- Substitutions in ``BinaryMap`` now sorted according to input alphabet (before they were alphabetical).
 
 0.3
 ---

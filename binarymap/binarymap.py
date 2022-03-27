@@ -155,7 +155,7 @@ class BinaryMap:
     >>> binmap.binarylength
     5
     >>> binmap.all_subs
-    ['M1A', 'M1C', 'A2*', 'A2C', 'K3A']
+    ['M1A', 'M1C', 'A2C', 'A2*', 'K3A']
     >>> binmap.binary_sites
     array([1, 1, 2, 2, 3])
 
@@ -174,8 +174,8 @@ class BinaryMap:
            [1, 0, 0, 0, 0],
            [0, 1, 0, 0, 1],
            [0, 0, 0, 0, 0],
-           [0, 0, 0, 1, 1],
-           [0, 0, 1, 0, 0]], dtype=int8)
+           [0, 0, 1, 0, 1],
+           [0, 0, 0, 1, 0]], dtype=int8)
     >>> binmap.substitution_variants
     ['', 'M1A', 'M1C K3A', '', 'A2C K3A', 'A2*']
     >>> binmap.substitutions_col
@@ -197,14 +197,14 @@ class BinaryMap:
     [0]
     [1, 4]
     []
-    [3, 4]
-    [2]
+    [2, 4]
+    [3]
 
     Specify allowed substitutions including one not in ``func_scores_df``:
 
     >>> allowed_subs = ['K3G', 'M1A', 'M1C', 'A2C', 'A2*', 'K3A']
     >>> BinaryMap(func_scores_df, allowed_subs=allowed_subs).all_subs
-    ['M1A', 'M1C', 'A2*', 'A2C', 'K3A', 'K3G']
+    ['M1A', 'M1C', 'A2C', 'A2*', 'K3A', 'K3G']
 
     But we cannot initialize if all substitutions not in ``allowed_subs``:
 
@@ -294,7 +294,9 @@ class BinaryMap:
     >>> func_scores_gap_df = func_scores_df.append(
     ...     pd.DataFrame([("M1-", 0, 0.1)], columns=func_scores_df.columns)
     ... )
-    >>> _ = BinaryMap(func_scores_gap_df, alphabet=AAS_WITHSTOP_WITHGAP)
+    >>> bmap_gap = BinaryMap(func_scores_gap_df, alphabet=AAS_WITHSTOP_WITHGAP)
+    >>> bmap_gap.all_subs
+    ['M1A', 'M1C', 'M1-', 'A2C', 'A2*', 'K3A']
 
     """
 
@@ -458,8 +460,9 @@ class BinaryMap:
             if wtseq is not None:
                 raise ValueError('`wtseq` should be None if `expand` is False')
             i = 0
+            char_order = {c: i for i, c in enumerate(self.alphabet)}
             for site, wt in sorted(wts.items()):
-                for mut in sorted(muts[site]):
+                for mut in sorted(muts[site], key=lambda m: char_order[m[-1]]):
                     self.binary_sites.append(site)
                     self._i_to_sub[i] = f"{wt}{site}{mut}"
                     i += 1
