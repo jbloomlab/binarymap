@@ -35,6 +35,12 @@ AAS_NOSTOP = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
 AAS_WITHSTOP = tuple(list(AAS_NOSTOP) + ['*'])
 """tuple: Amino-acid one-letter codes alphabetized plus stop as ``*``."""
 
+AAS_WITHGAP = tuple(list(AAS_NOSTOP) + ['-'])
+"""tuple: Amino-acid one-letter codes alphabetized plus gap as ``-``."""
+
+AAS_WITHSTOP_WITHGAP = tuple(list(AAS_WITHSTOP) + ['-'])
+"""tuple: Amino-acid one-letter codes plus stop as ``*`` and gap as ``-``."""
+
 
 class BinaryMap:
     r"""Binary representations of variants and their functional scores.
@@ -283,6 +289,13 @@ class BinaryMap:
     >>> binmap_counts.n_post
     array([ 0,  3, 12, 11,  9,  8])
 
+    Use an alphabet that allows gaps:
+
+    >>> func_scores_gap_df = func_scores_df.append(
+    ...     pd.DataFrame([("M1-", 0, 0.1)], columns=func_scores_df.columns)
+    ... )
+    >>> _ = BinaryMap(func_scores_gap_df, alphabet=AAS_WITHSTOP_WITHGAP)
+
     """
 
     def __eq__(self, other):
@@ -385,6 +398,8 @@ class BinaryMap:
                 chars.append(char)
             elif char == '*':
                 chars.append(r'\*')
+            elif char == "-":
+                chars.append(r"\-")
             else:
                 raise ValueError(f"invalid alphabet character: {char}")
         chars = '|'.join(chars)
