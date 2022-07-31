@@ -12,6 +12,7 @@ install:
   - pip install -e .
 
 script: 
+  - black --check .
   - flake8
   - pytest
 

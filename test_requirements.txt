@@ -1,5 +1,6 @@
 pytest
 flake8
+black
 flake8-docstrings
 flake8-rst-docstrings
 flake8-builtins
