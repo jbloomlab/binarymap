@@ -44,6 +44,7 @@ setup(
     long_description=readme,
     license="GPLv3",
     install_requires=[
+        "natsort>=0.8",
         "pandas>=1.2",
         "scipy>=1.1",
     ],
