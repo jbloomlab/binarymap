@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>binarymap.binarymap &#8212; binarymap 0.4 documentation</title>
+    <title>binarymap.binarymap &#8212; binarymap 0.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -56,6 +56,8 @@
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
+<span class="kn">import</span> <span class="nn">natsort</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span>
 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>  <span class="c1"># noqa: F401</span>
@@ -63,17 +65,37 @@
 <span class="kn">import</span> <span class="nn">scipy.sparse</span>
 
 
-<span class="n">AAS_NOSTOP</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span>
-              <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+<span class="n">AAS_NOSTOP</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;A&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;C&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;D&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;E&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;F&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;G&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;H&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;I&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;K&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;L&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;M&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;N&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;P&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Q&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;R&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;S&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;T&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;V&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;W&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Y&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;tuple: Amino-acid one-letter codes alphabetized, doesn&#39;t include stop.&quot;&quot;&quot;</span>
 
-<span class="n">AAS_WITHSTOP</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">AAS_NOSTOP</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">])</span>
+<span class="n">AAS_WITHSTOP</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">AAS_NOSTOP</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">])</span>
 <span class="sd">&quot;&quot;&quot;tuple: Amino-acid one-letter codes alphabetized plus stop as ``*``.&quot;&quot;&quot;</span>
 
-<span class="n">AAS_WITHGAP</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">AAS_NOSTOP</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;-&#39;</span><span class="p">])</span>
+<span class="n">AAS_WITHGAP</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">AAS_NOSTOP</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;-&quot;</span><span class="p">])</span>
 <span class="sd">&quot;&quot;&quot;tuple: Amino-acid one-letter codes alphabetized plus gap as ``-``.&quot;&quot;&quot;</span>
 
-<span class="n">AAS_WITHSTOP_WITHGAP</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">AAS_WITHSTOP</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;-&#39;</span><span class="p">])</span>
+<span class="n">AAS_WITHSTOP_WITHGAP</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">AAS_WITHSTOP</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;-&quot;</span><span class="p">])</span>
 <span class="sd">&quot;&quot;&quot;tuple: Amino-acid one-letter codes plus stop as ``*`` and gap as ``-``.&quot;&quot;&quot;</span>
 
 
@@ -122,6 +144,10 @@
 <span class="sd">        and error will be raised if attempts to initialize with variant</span>
 <span class="sd">        containing substitution not in this set. Incompatible with ``expand``</span>
 <span class="sd">        option.</span>
+<span class="sd">    sites_as_str : bool</span>
+<span class="sd">        Site numbers are str rather than int. If you use this option, you</span>
+<span class="sd">        are allowed to have sites with a lowercase letter suffix (e.g., &quot;214a&quot;) as</span>
+<span class="sd">        sometimes arise when a protein is being numbered in alignment with a reference.</span>
 <span class="sd">    expand : bool</span>
 <span class="sd">        If `False` (the default) the encoding only covers substitutions</span>
 <span class="sd">        relative to wildtype that are observed in the set of variants. If</span>
@@ -129,6 +155,7 @@
 <span class="sd">        site regardless of whether they are wildtype or observed. In this</span>
 <span class="sd">        latter case, each binary representation is of length (alphabet size)</span>
 <span class="sd">        :math:`\times` (sequence length), and sums to the sequence length.</span>
+<span class="sd">        You can **not** use this option in conjunction with `sites_as_str`.</span>
 <span class="sd">    wtseq : None or str</span>
 <span class="sd">        Only set this option if `expand` is `True`. In that case, it</span>
 <span class="sd">        should be the wildtype sequence.</span>
@@ -146,9 +173,10 @@
 <span class="sd">        if the variant has the substitution :meth:`BinaryMap.i_to_sub`</span>
 <span class="sd">        and 0 otherwise. To convert to dense `numpy.ndarray`, use</span>
 <span class="sd">        `toarray` method of the sparse matrix.</span>
-<span class="sd">    binary_sites : numpy.ndarray of dtype int</span>
+<span class="sd">    binary_sites : numpy.ndarray</span>
 <span class="sd">        Array of length `binarylength` giving the site number corresponding</span>
-<span class="sd">        to each mutation in the binary order.</span>
+<span class="sd">        to each mutation in the binary order. Entries or int or str depending</span>
+<span class="sd">        on value of `sites_as_str`.</span>
 <span class="sd">    substitution_variants : list</span>
 <span class="sd">        All variants as substitution strings as provided in `substitutions_col`</span>
 <span class="sd">        of `func_scores_df`.</span>
@@ -166,6 +194,8 @@
 <span class="sd">    alphabet : tuple</span>
 <span class="sd">        Allowed characters (e.g., amino acids or codons).</span>
 <span class="sd">    substitutions_col : str</span>
+<span class="sd">        Value set when initializing object.</span>
+<span class="sd">    sites_as_str : bool</span>
 <span class="sd">        Value set when initializing object.</span>
 
 <span class="sd">    Example</span>
@@ -326,12 +356,47 @@
 
 <span class="sd">    Use an alphabet that allows gaps:</span>
 
-<span class="sd">    &gt;&gt;&gt; func_scores_gap_df = func_scores_df.append(</span>
-<span class="sd">    ...     pd.DataFrame([(&quot;M1-&quot;, 0, 0.1)], columns=func_scores_df.columns)</span>
+<span class="sd">    &gt;&gt;&gt; func_scores_gap_df = pd.concat(</span>
+<span class="sd">    ...     [</span>
+<span class="sd">    ...         func_scores_df,</span>
+<span class="sd">    ...         pd.DataFrame([(&quot;M1-&quot;, 0, 0.1)], columns=func_scores_df.columns),</span>
+<span class="sd">    ...     ]</span>
 <span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt; bmap_gap = BinaryMap(func_scores_gap_df, alphabet=AAS_WITHSTOP_WITHGAP)</span>
 <span class="sd">    &gt;&gt;&gt; bmap_gap.all_subs</span>
 <span class="sd">    [&#39;M1A&#39;, &#39;M1C&#39;, &#39;M1-&#39;, &#39;A2C&#39;, &#39;A2*&#39;, &#39;K3A&#39;]</span>
+
+<span class="sd">    Use str as sites to enable letter suffixes on sites:</span>
+
+<span class="sd">    &gt;&gt;&gt; func_scores_sitestr_df = pd.concat(</span>
+<span class="sd">    ...     [</span>
+<span class="sd">    ...         func_scores_df,</span>
+<span class="sd">    ...         pd.DataFrame([(&quot;L3aT&quot;, 0.3, 0.1)], columns=func_scores_df.columns),</span>
+<span class="sd">    ...     ]</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; BinaryMap(func_scores_sitestr_df)</span>
+<span class="sd">    ... # doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">      ...</span>
+<span class="sd">    ValueError: substitution L3aT is invalid for alphabet</span>
+<span class="sd">    (&#39;A&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;, &#39;F&#39;, &#39;G&#39;, &#39;H&#39;, &#39;I&#39;, &#39;K&#39;, &#39;L&#39;, &#39;M&#39;, &#39;N&#39;,</span>
+<span class="sd">    &#39;P&#39;, &#39;Q&#39;, &#39;R&#39;, &#39;S&#39;, &#39;T&#39;, &#39;V&#39;, &#39;W&#39;, &#39;Y&#39;, &#39;*&#39;)</span>
+
+<span class="sd">    &gt;&gt;&gt; bmap_sitestr = BinaryMap(func_scores_sitestr_df, sites_as_str=True)</span>
+<span class="sd">    &gt;&gt;&gt; bmap_sitestr.all_subs</span>
+<span class="sd">    [&#39;M1A&#39;, &#39;M1C&#39;, &#39;A2C&#39;, &#39;A2*&#39;, &#39;K3A&#39;, &#39;L3aT&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; bmap_sitestr.binary_sites</span>
+<span class="sd">    array([&#39;1&#39;, &#39;1&#39;, &#39;2&#39;, &#39;2&#39;, &#39;3&#39;, &#39;3a&#39;], dtype=&#39;&lt;U2&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; type(bmap_sitestr.binary_variants) == scipy.sparse.csr_matrix</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; bmap_sitestr.binary_variants.toarray()</span>
+<span class="sd">    array([[0, 0, 0, 0, 0, 0],</span>
+<span class="sd">           [1, 0, 0, 0, 0, 0],</span>
+<span class="sd">           [0, 1, 0, 0, 1, 0],</span>
+<span class="sd">           [0, 0, 0, 0, 0, 0],</span>
+<span class="sd">           [0, 0, 1, 0, 1, 0],</span>
+<span class="sd">           [0, 0, 0, 1, 0, 0],</span>
+<span class="sd">           [0, 0, 0, 0, 0, 1]], dtype=int8)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -376,30 +441,33 @@
                         <span class="k">return</span> <span class="kc">False</span>
             <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">func_scores_df</span><span class="p">,</span>
-                 <span class="o">*</span><span class="p">,</span>
-                 <span class="n">substitutions_col</span><span class="o">=</span><span class="s1">&#39;aa_substitutions&#39;</span><span class="p">,</span>
-                 <span class="n">func_score_col</span><span class="o">=</span><span class="s1">&#39;func_score&#39;</span><span class="p">,</span>
-                 <span class="n">func_score_var_col</span><span class="o">=</span><span class="s1">&#39;func_score_var&#39;</span><span class="p">,</span>
-                 <span class="n">n_pre_col</span><span class="o">=</span><span class="s1">&#39;pre_count&#39;</span><span class="p">,</span>
-                 <span class="n">n_post_col</span><span class="o">=</span><span class="s1">&#39;post_count&#39;</span><span class="p">,</span>
-                 <span class="n">cols_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">alphabet</span><span class="o">=</span><span class="n">AAS_WITHSTOP</span><span class="p">,</span>
-                 <span class="n">allowed_subs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">wtseq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">func_scores_df</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">substitutions_col</span><span class="o">=</span><span class="s2">&quot;aa_substitutions&quot;</span><span class="p">,</span>
+        <span class="n">func_score_col</span><span class="o">=</span><span class="s2">&quot;func_score&quot;</span><span class="p">,</span>
+        <span class="n">func_score_var_col</span><span class="o">=</span><span class="s2">&quot;func_score_var&quot;</span><span class="p">,</span>
+        <span class="n">n_pre_col</span><span class="o">=</span><span class="s2">&quot;pre_count&quot;</span><span class="p">,</span>
+        <span class="n">n_post_col</span><span class="o">=</span><span class="s2">&quot;post_count&quot;</span><span class="p">,</span>
+        <span class="n">cols_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">alphabet</span><span class="o">=</span><span class="n">AAS_WITHSTOP</span><span class="p">,</span>
+        <span class="n">allowed_subs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">sites_as_str</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">wtseq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object; see main class docstring.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nvariants</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">func_scores_df</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sites_as_str</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">sites_as_str</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">lim_min</span><span class="p">,</span> <span class="n">lim_max</span> <span class="ow">in</span> <span class="p">[</span>
-                <span class="p">(</span><span class="n">func_score_col</span><span class="p">,</span> <span class="s1">&#39;func_scores&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-                <span class="p">(</span><span class="n">func_score_var_col</span><span class="p">,</span> <span class="s1">&#39;func_scores_var&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-                <span class="p">(</span><span class="n">n_pre_col</span><span class="p">,</span> <span class="s1">&#39;n_pre&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-                <span class="p">(</span><span class="n">n_post_col</span><span class="p">,</span> <span class="s1">&#39;n_post&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-                <span class="p">]:</span>
+            <span class="p">(</span><span class="n">func_score_col</span><span class="p">,</span> <span class="s2">&quot;func_scores&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">func_score_var_col</span><span class="p">,</span> <span class="s2">&quot;func_scores_var&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">n_pre_col</span><span class="p">,</span> <span class="s2">&quot;n_pre&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">n_post_col</span><span class="p">,</span> <span class="s2">&quot;n_post&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">]:</span>
             <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">func_scores_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">cols_optional</span><span class="p">:</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -420,11 +488,12 @@
 
         <span class="c1"># get list of substitution strings for each variant</span>
         <span class="k">if</span> <span class="n">substitutions_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">func_scores_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`func_scores_df` lacks `substitutions_col` &#39;</span> <span class="o">+</span>
-                             <span class="n">substitutions_col</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;`func_scores_df` lacks `substitutions_col` &quot;</span> <span class="o">+</span> <span class="n">substitutions_col</span>
+            <span class="p">)</span>
         <span class="n">substitutions</span> <span class="o">=</span> <span class="n">func_scores_df</span><span class="p">[</span><span class="n">substitutions_col</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substitutions</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;values in `substitutions_col` not all str&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;values in `substitutions_col` not all str&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">substitution_variants</span> <span class="o">=</span> <span class="n">substitutions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">substitutions_col</span> <span class="o">=</span> <span class="n">substitutions_col</span>
 
@@ -433,16 +502,18 @@
         <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">char</span><span class="o">.</span><span class="n">isalpha</span><span class="p">():</span>
                 <span class="n">chars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">char</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
-                <span class="n">chars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span><span class="p">:</span>
+                <span class="n">chars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\*&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span>
                 <span class="n">chars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\-&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid alphabet character: </span><span class="si">{</span><span class="n">char</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">chars</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sub_regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;(?P&lt;wt&gt;</span><span class="si">{</span><span class="n">chars</span><span class="si">}</span><span class="s2">)&quot;</span>
-                           <span class="sa">rf</span><span class="s2">&quot;(?P&lt;site&gt;\d+)&quot;</span>
-                           <span class="sa">rf</span><span class="s2">&quot;(?P&lt;mut&gt;</span><span class="si">{</span><span class="n">chars</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="n">chars</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sites_as_str</span><span class="p">:</span>
+            <span class="n">site_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(?P&lt;site&gt;\d+[a-z]?)&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">site_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(?P&lt;site&gt;\d+)&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sub_regex</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;(?P&lt;wt&gt;</span><span class="si">{</span><span class="n">chars</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="o">+</span> <span class="n">site_regex</span> <span class="o">+</span> <span class="sa">rf</span><span class="s2">&quot;(?P&lt;mut&gt;</span><span class="si">{</span><span class="n">chars</span><span class="si">}</span><span class="s2">)&quot;</span>
 
         <span class="c1"># build mapping from substitution to binary map index</span>
         <span class="n">wts</span> <span class="o">=</span> <span class="p">{}</span>
@@ -452,35 +523,41 @@
             <span class="n">allowed_subs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">allowed_subs</span><span class="p">)</span>
             <span class="n">extra_subs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">subs_in_variants</span> <span class="o">-</span> <span class="n">allowed_subs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">extra_subs</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;substitutions not in `allowed_subs`: &#39;</span>
-                                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">extra_subs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;substitutions not in `allowed_subs`: &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">extra_subs</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
             <span class="n">subs_in_variants</span> <span class="o">=</span> <span class="n">allowed_subs</span>
         <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subs_in_variants</span><span class="p">:</span>
             <span class="n">wt</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">mut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_sub_str</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">site</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wts</span><span class="p">:</span>
                 <span class="n">wts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">wt</span>
             <span class="k">elif</span> <span class="n">wt</span> <span class="o">!=</span> <span class="n">wts</span><span class="p">[</span><span class="n">site</span><span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;different wildtypes at </span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wt</span><span class="si">}</span><span class="s2"> versus </span><span class="si">{</span><span class="n">wts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;different wildtypes at </span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wt</span><span class="si">}</span><span class="s2"> versus </span><span class="si">{</span><span class="n">wts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
             <span class="n">muts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">mut</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wt_indices</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># keyed by site, values wildtype indices</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">expand</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sites_as_str</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cannot use both `expand` and `sites_as_str`&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">allowed_subs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot use both `expand` and `allowed_subs`&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cannot use both `expand` and `allowed_subs`&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wtseq</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`wtseq` must be str if `expand` is True&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`wtseq` must be str if `expand` is True&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">wtseq</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`wtseq` has characters not in alphabet&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`wtseq` has characters not in alphabet&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">wts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;if `expand`, site numbers must start at 1&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;if `expand`, site numbers must start at 1&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">wts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">wtseq</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`wtseq` not long enough given site numbers&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`wtseq` not long enough given site numbers&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">wt</span> <span class="ow">in</span> <span class="n">wts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">wtseq</span><span class="p">[</span><span class="n">site</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">wt</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`wtseq` and `func_scores_df` differ on &#39;</span>
-                                     <span class="sa">f</span><span class="s2">&quot;identity at site </span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;`wtseq` and `func_scores_df` differ on &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;identity at site </span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">wt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wtseq</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
                 <span class="k">assert</span> <span class="p">(</span><span class="n">site</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wts</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">wts</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">==</span> <span class="n">wt</span><span class="p">)</span>
@@ -493,16 +570,19 @@
                     <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">wtseq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`wtseq` should be None if `expand` is False&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`wtseq` should be None if `expand` is False&quot;</span><span class="p">)</span>
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">char_order</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="p">)}</span>
-            <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">wt</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wts</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">wt</span> <span class="ow">in</span> <span class="n">natsort</span><span class="o">.</span><span class="n">natsorted</span><span class="p">(</span><span class="n">wts</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
                 <span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">muts</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">char_order</span><span class="p">[</span><span class="n">m</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wt</span><span class="si">}{</span><span class="n">site</span><span class="si">}{</span><span class="n">mut</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">binary_sites</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sites_as_str</span> <span class="k">else</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sub_to_i</span> <span class="o">=</span> <span class="p">{</span><span class="n">sub</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sub</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wt_index_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wt_indices</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sub_to_i</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span>
@@ -515,10 +595,10 @@
                 <span class="n">row_ind</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ivariant</span><span class="p">)</span>
                 <span class="n">col_ind</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">isub</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_variants</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
-                        <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">row_ind</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int8&#39;</span><span class="p">),</span>
-                         <span class="p">(</span><span class="n">row_ind</span><span class="p">,</span> <span class="n">col_ind</span><span class="p">)),</span>
-                        <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nvariants</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">),</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int8&#39;</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">row_ind</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int8&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">row_ind</span><span class="p">,</span> <span class="n">col_ind</span><span class="p">)),</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nvariants</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="BinaryMap.sub_str_to_binary"><a class="viewcode-back" href="../../binarymap.binarymap.html#binarymap.binarymap.BinaryMap.sub_str_to_binary">[docs]</a>    <span class="k">def</span> <span class="nf">sub_str_to_binary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_str</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert space-delimited substitutions to binary representation.</span>
@@ -534,7 +614,7 @@
 <span class="sd">            Binary representation.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">binrep</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int8&#39;</span><span class="p">)</span>
+        <span class="n">binrep</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
         <span class="n">binrep</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sub_str_to_indices</span><span class="p">(</span><span class="n">sub_str</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">binrep</span></div>
 
@@ -570,11 +650,16 @@
         <span class="sd">&quot;&quot;&quot;Parse substitution string to `(wt, site, mut)`.&quot;&quot;&quot;</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sub_regex</span><span class="p">,</span> <span class="n">sub</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">m</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;substitution </span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2"> is invalid &quot;</span>
-                             <span class="sa">f</span><span class="s2">&quot;for alphabet </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;wt&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;mut&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;substitution </span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2"> is invalid &quot;</span> <span class="sa">f</span><span class="s2">&quot;for alphabet </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;mut&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;wildtype and mutant identity the same in </span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;wt&#39;</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;site&#39;</span><span class="p">)),</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;mut&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sites_as_str</span><span class="p">:</span>
+            <span class="n">site</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;site&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">site</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;site&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;wt&quot;</span><span class="p">),</span> <span class="n">site</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;mut&quot;</span><span class="p">))</span>
 
 <div class="viewcode-block" id="BinaryMap.binary_to_sub_str"><a class="viewcode-back" href="../../binarymap.binarymap.html#binarymap.binarymap.BinaryMap.binary_to_sub_str">[docs]</a>    <span class="k">def</span> <span class="nf">binary_to_sub_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binary</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert binary representation to space-delimited substitutions.</span>
@@ -595,16 +680,19 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">binary</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">,):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`binary` not length </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span>
-                             <span class="nb">str</span><span class="p">(</span><span class="n">binary</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`binary` not length </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">({</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">}):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`binary` not all 0 or 1:</span><span class="se">\n</span><span class="si">{</span><span class="n">binary</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">subs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i_to_sub</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">binary</span><span class="p">))</span> <span class="k">if</span> <span class="n">s</span><span class="p">]</span>
         <span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_sub_str</span><span class="p">(</span><span class="n">sub</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subs</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sites</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`binary` specifies multiple substitutions &#39;</span>
-                             <span class="sa">f</span><span class="s2">&quot;at same site:</span><span class="se">\n</span><span class="si">{</span><span class="n">binary</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;`binary` specifies multiple substitutions &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;at same site:</span><span class="se">\n</span><span class="si">{</span><span class="n">binary</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BinaryMap.i_to_sub"><a class="viewcode-back" href="../../binarymap.binarymap.html#binarymap.binarymap.BinaryMap.i_to_sub">[docs]</a>    <span class="k">def</span> <span class="nf">i_to_sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Substitution corresponding to index in binary representation.</span>
@@ -622,13 +710,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wt_index_set</span><span class="p">:</span>
-                <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">return</span> <span class="s2">&quot;&quot;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_i_to_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid i of </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. Must be &gt;= 0 and &quot;</span>
-                                 <span class="sa">f</span><span class="s2">&quot;&lt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;invalid i of </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. Must be &gt;= 0 and &quot;</span> <span class="sa">f</span><span class="s2">&quot;&lt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unexpected error, i = </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> should be in map&quot;</span><span class="p">)</span></div>
 
@@ -649,20 +738,24 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_to_i</span><span class="p">[</span><span class="n">sub</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sub of </span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2"> is not in the binary map. The map &quot;</span>
-                             <span class="s1">&#39;only contains substitutions in the variants.&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;sub of </span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2"> is not in the binary map. The map &quot;</span>
+                <span class="s2">&quot;only contains substitutions in the variants.&quot;</span>
+            <span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">all_subs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;list: Substitutions in order encoded in binary map.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_all_subs&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_all_subs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">i_to_sub</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
-                              <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_to_sub</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_all_subs&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_all_subs</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">i_to_sub</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binarylength</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_to_sub</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_subs</span></div>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">doctest</span>
+
     <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
 </pre></div>
 
