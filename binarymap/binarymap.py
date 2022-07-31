@@ -28,17 +28,37 @@ import pandas as pd  # noqa: F401
 import scipy.sparse
 
 
-AAS_NOSTOP = ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
-              'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y')
+AAS_NOSTOP = (
+    "A",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "V",
+    "W",
+    "Y",
+)
 """tuple: Amino-acid one-letter codes alphabetized, doesn't include stop."""
 
-AAS_WITHSTOP = tuple(list(AAS_NOSTOP) + ['*'])
+AAS_WITHSTOP = tuple(list(AAS_NOSTOP) + ["*"])
 """tuple: Amino-acid one-letter codes alphabetized plus stop as ``*``."""
 
-AAS_WITHGAP = tuple(list(AAS_NOSTOP) + ['-'])
+AAS_WITHGAP = tuple(list(AAS_NOSTOP) + ["-"])
 """tuple: Amino-acid one-letter codes alphabetized plus gap as ``-``."""
 
-AAS_WITHSTOP_WITHGAP = tuple(list(AAS_WITHSTOP) + ['-'])
+AAS_WITHSTOP_WITHGAP = tuple(list(AAS_WITHSTOP) + ["-"])
 """tuple: Amino-acid one-letter codes plus stop as ``*`` and gap as ``-``."""
 
 
@@ -291,8 +311,11 @@ class BinaryMap:
 
     Use an alphabet that allows gaps:
 
-    >>> func_scores_gap_df = func_scores_df.append(
-    ...     pd.DataFrame([("M1-", 0, 0.1)], columns=func_scores_df.columns)
+    >>> func_scores_gap_df = pd.concat(
+    ...     [
+    ...         func_scores_df,
+    ...         pd.DataFrame([("M1-", 0, 0.1)], columns=func_scores_df.columns),
+    ...     ]
     ... )
     >>> bmap_gap = BinaryMap(func_scores_gap_df, alphabet=AAS_WITHSTOP_WITHGAP)
     >>> bmap_gap.all_subs
@@ -341,30 +364,31 @@ class BinaryMap:
                         return False
             return True
 
-    def __init__(self,
-                 func_scores_df,
-                 *,
-                 substitutions_col='aa_substitutions',
-                 func_score_col='func_score',
-                 func_score_var_col='func_score_var',
-                 n_pre_col='pre_count',
-                 n_post_col='post_count',
-                 cols_optional=True,
-                 alphabet=AAS_WITHSTOP,
-                 allowed_subs=None,
-                 expand=False,
-                 wtseq=None,
-                 ):
+    def __init__(
+        self,
+        func_scores_df,
+        *,
+        substitutions_col="aa_substitutions",
+        func_score_col="func_score",
+        func_score_var_col="func_score_var",
+        n_pre_col="pre_count",
+        n_post_col="post_count",
+        cols_optional=True,
+        alphabet=AAS_WITHSTOP,
+        allowed_subs=None,
+        expand=False,
+        wtseq=None,
+    ):
         """Initialize object; see main class docstring."""
         self.nvariants = len(func_scores_df)
         self.alphabet = tuple(alphabet)
 
         for col, attr, dtype, lim_min, lim_max in [
-                (func_score_col, 'func_scores', float, None, None),
-                (func_score_var_col, 'func_scores_var', float, 0, None),
-                (n_pre_col, 'n_pre', int, 0, None),
-                (n_post_col, 'n_post', int, 0, None),
-                ]:
+            (func_score_col, "func_scores", float, None, None),
+            (func_score_var_col, "func_scores_var", float, 0, None),
+            (n_pre_col, "n_pre", int, 0, None),
+            (n_post_col, "n_post", int, 0, None),
+        ]:
             if col not in func_scores_df.columns:
                 if cols_optional:
                     setattr(self, attr, None)
@@ -385,11 +409,12 @@ class BinaryMap:
 
         # get list of substitution strings for each variant
         if substitutions_col not in func_scores_df.columns:
-            raise ValueError('`func_scores_df` lacks `substitutions_col` ' +
-                             substitutions_col)
+            raise ValueError(
+                "`func_scores_df` lacks `substitutions_col` " + substitutions_col
+            )
         substitutions = func_scores_df[substitutions_col].tolist()
         if not all(isinstance(s, str) for s in substitutions):
-            raise ValueError('values in `substitutions_col` not all str')
+            raise ValueError("values in `substitutions_col` not all str")
         self.substitution_variants = substitutions
         self.substitutions_col = substitutions_col
 
@@ -398,16 +423,14 @@ class BinaryMap:
         for char in alphabet:
             if char.isalpha():
                 chars.append(char)
-            elif char == '*':
-                chars.append(r'\*')
+            elif char == "*":
+                chars.append(r"\*")
             elif char == "-":
                 chars.append(r"\-")
             else:
                 raise ValueError(f"invalid alphabet character: {char}")
-        chars = '|'.join(chars)
-        self._sub_regex = (rf"(?P<wt>{chars})"
-                           rf"(?P<site>\d+)"
-                           rf"(?P<mut>{chars})")
+        chars = "|".join(chars)
+        self._sub_regex = rf"(?P<wt>{chars})" rf"(?P<site>\d+)" rf"(?P<mut>{chars})"
 
         # build mapping from substitution to binary map index
         wts = {}
@@ -417,35 +440,39 @@ class BinaryMap:
             allowed_subs = set(allowed_subs)
             extra_subs = sorted(subs_in_variants - allowed_subs)
             if extra_subs:
-                raise ValueError('substitutions not in `allowed_subs`: '
-                                 f"{extra_subs}")
+                raise ValueError(
+                    "substitutions not in `allowed_subs`: " f"{extra_subs}"
+                )
             subs_in_variants = allowed_subs
         for sub in subs_in_variants:
             wt, site, mut = self._parse_sub_str(sub)
             if site not in wts:
                 wts[site] = wt
             elif wt != wts[site]:
-                raise ValueError(f"different wildtypes at {site}:\n"
-                                 f"{wt} versus {wts[site]}")
+                raise ValueError(
+                    f"different wildtypes at {site}:\n" f"{wt} versus {wts[site]}"
+                )
             muts[site].add(mut)
         self._i_to_sub = {}
         self._wt_indices = {}  # keyed by site, values wildtype indices
         self.binary_sites = []
         if expand:
             if allowed_subs is not None:
-                raise ValueError('cannot use both `expand` and `allowed_subs`')
+                raise ValueError("cannot use both `expand` and `allowed_subs`")
             if not isinstance(wtseq, str):
-                raise ValueError('`wtseq` must be str if `expand` is True')
+                raise ValueError("`wtseq` must be str if `expand` is True")
             if not set(wtseq).issubset(set(alphabet)):
-                raise ValueError('`wtseq` has characters not in alphabet')
+                raise ValueError("`wtseq` has characters not in alphabet")
             if min(wts.keys()) < 1:
-                raise ValueError('if `expand`, site numbers must start at 1')
+                raise ValueError("if `expand`, site numbers must start at 1")
             if max(wts.keys()) > len(wtseq):
-                raise ValueError('`wtseq` not long enough given site numbers')
+                raise ValueError("`wtseq` not long enough given site numbers")
             for site, wt in wts.items():
                 if wtseq[site - 1] != wt:
-                    raise ValueError('`wtseq` and `func_scores_df` differ on '
-                                     f"identity at site {site}")
+                    raise ValueError(
+                        "`wtseq` and `func_scores_df` differ on "
+                        f"identity at site {site}"
+                    )
             i = 0
             for site, wt in enumerate(wtseq, start=1):
                 assert (site not in wts) or (wts[site] == wt)
@@ -458,7 +485,7 @@ class BinaryMap:
                     i += 1
         else:
             if wtseq is not None:
-                raise ValueError('`wtseq` should be None if `expand` is False')
+                raise ValueError("`wtseq` should be None if `expand` is False")
             i = 0
             char_order = {c: i for i, c in enumerate(self.alphabet)}
             for site, wt in sorted(wts.items()):
@@ -480,10 +507,10 @@ class BinaryMap:
                 row_ind.append(ivariant)
                 col_ind.append(isub)
         self.binary_variants = scipy.sparse.csr_matrix(
-                        (numpy.ones(len(row_ind), dtype='int8'),
-                         (row_ind, col_ind)),
-                        shape=(self.nvariants, self.binarylength),
-                        dtype='int8')
+            (numpy.ones(len(row_ind), dtype="int8"), (row_ind, col_ind)),
+            shape=(self.nvariants, self.binarylength),
+            dtype="int8",
+        )
 
     def sub_str_to_binary(self, sub_str):
         """Convert space-delimited substitutions to binary representation.
@@ -499,7 +526,7 @@ class BinaryMap:
             Binary representation.
 
         """
-        binrep = numpy.zeros(self.binarylength, dtype='int8')
+        binrep = numpy.zeros(self.binarylength, dtype="int8")
         binrep[self.sub_str_to_indices(sub_str)] = 1
         return binrep
 
@@ -535,11 +562,12 @@ class BinaryMap:
         """Parse substitution string to `(wt, site, mut)`."""
         m = re.fullmatch(self._sub_regex, sub)
         if not m:
-            raise ValueError(f"substitution {sub} is invalid "
-                             f"for alphabet {self.alphabet}")
-        if m.group('wt') == m.group('mut'):
+            raise ValueError(
+                f"substitution {sub} is invalid " f"for alphabet {self.alphabet}"
+            )
+        if m.group("wt") == m.group("mut"):
             raise ValueError(f"wildtype and mutant identity the same in {sub}")
-        return (m.group('wt'), int(m.group('site')), m.group('mut'))
+        return (m.group("wt"), int(m.group("site")), m.group("mut"))
 
     def binary_to_sub_str(self, binary):
         """Convert binary representation to space-delimited substitutions.
@@ -560,16 +588,19 @@ class BinaryMap:
 
         """
         if binary.shape != (self.binarylength,):
-            raise ValueError(f"`binary` not length {self.binarylength}:\n" +
-                             str(binary))
+            raise ValueError(
+                f"`binary` not length {self.binarylength}:\n" + str(binary)
+            )
         if not set(binary).issubset({0, 1}):
             raise ValueError(f"`binary` not all 0 or 1:\n{binary}")
         subs = [s for s in map(self.i_to_sub, numpy.flatnonzero(binary)) if s]
         sites = [self._parse_sub_str(sub)[1] for sub in subs]
         if len(sites) != len(set(sites)):
-            raise ValueError('`binary` specifies multiple substitutions '
-                             f"at same site:\n{binary}\n{' '.join(subs)}")
-        return ' '.join(subs)
+            raise ValueError(
+                "`binary` specifies multiple substitutions "
+                f"at same site:\n{binary}\n{' '.join(subs)}"
+            )
+        return " ".join(subs)
 
     def i_to_sub(self, i):
         """Substitution corresponding to index in binary representation.
@@ -587,13 +618,14 @@ class BinaryMap:
         """
         try:
             if i in self._wt_index_set:
-                return ''
+                return ""
             else:
                 return self._i_to_sub[i]
         except KeyError:
             if i < 0 or i >= self.binarylength:
-                raise ValueError(f"invalid i of {i}. Must be >= 0 and "
-                                 f"< {self.binarylength}")
+                raise ValueError(
+                    f"invalid i of {i}. Must be >= 0 and " f"< {self.binarylength}"
+                )
             else:
                 raise ValueError(f"unexpected error, i = {i} should be in map")
 
@@ -614,18 +646,22 @@ class BinaryMap:
         try:
             return self._sub_to_i[sub]
         except KeyError:
-            raise ValueError(f"sub of {sub} is not in the binary map. The map "
-                             'only contains substitutions in the variants.')
+            raise ValueError(
+                f"sub of {sub} is not in the binary map. The map "
+                "only contains substitutions in the variants."
+            )
 
     @property
     def all_subs(self):
         """list: Substitutions in order encoded in binary map."""
-        if not hasattr(self, '_all_subs'):
-            self._all_subs = [self.i_to_sub(i) for i in
-                              range(self.binarylength) if self.i_to_sub(i)]
+        if not hasattr(self, "_all_subs"):
+            self._all_subs = [
+                self.i_to_sub(i) for i in range(self.binarylength) if self.i_to_sub(i)
+            ]
         return self._all_subs
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
