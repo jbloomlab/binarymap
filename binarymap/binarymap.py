@@ -21,6 +21,8 @@ using a :class:`BinaryMap`.
 import collections
 import re
 
+import natsort
+
 import numpy
 
 import pandas as pd  # noqa: F401
@@ -107,6 +109,10 @@ class BinaryMap:
         and error will be raised if attempts to initialize with variant
         containing substitution not in this set. Incompatible with ``expand``
         option.
+    sites_as_str : bool
+        Site numbers are str rather than int. If you use this option, you
+        are allowed to have sites with a lowercase letter suffix (e.g., "214a") as
+        sometimes arise when a protein is being numbered in alignment with a reference.
     expand : bool
         If `False` (the default) the encoding only covers substitutions
         relative to wildtype that are observed in the set of variants. If
@@ -114,6 +120,7 @@ class BinaryMap:
         site regardless of whether they are wildtype or observed. In this
         latter case, each binary representation is of length (alphabet size)
         :math:`\times` (sequence length), and sums to the sequence length.
+        You can **not** use this option in conjunction with `sites_as_str`.
     wtseq : None or str
         Only set this option if `expand` is `True`. In that case, it
         should be the wildtype sequence.
@@ -131,9 +138,10 @@ class BinaryMap:
         if the variant has the substitution :meth:`BinaryMap.i_to_sub`
         and 0 otherwise. To convert to dense `numpy.ndarray`, use
         `toarray` method of the sparse matrix.
-    binary_sites : numpy.ndarray of dtype int
+    binary_sites : numpy.ndarray
         Array of length `binarylength` giving the site number corresponding
-        to each mutation in the binary order.
+        to each mutation in the binary order. Entries or int or str depending
+        on value of `sites_as_str`.
     substitution_variants : list
         All variants as substitution strings as provided in `substitutions_col`
         of `func_scores_df`.
@@ -151,6 +159,8 @@ class BinaryMap:
     alphabet : tuple
         Allowed characters (e.g., amino acids or codons).
     substitutions_col : str
+        Value set when initializing object.
+    sites_as_str : bool
         Value set when initializing object.
 
     Example
@@ -321,6 +331,38 @@ class BinaryMap:
     >>> bmap_gap.all_subs
     ['M1A', 'M1C', 'M1-', 'A2C', 'A2*', 'K3A']
 
+    Use str as sites to enable letter suffixes on sites:
+
+    >>> func_scores_sitestr_df = pd.concat(
+    ...     [
+    ...         func_scores_df,
+    ...         pd.DataFrame([("L3aT", 0.3, 0.1)], columns=func_scores_df.columns),
+    ...     ]
+    ... )
+    >>> BinaryMap(func_scores_sitestr_df)
+    ... # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+      ...
+    ValueError: substitution L3aT is invalid for alphabet
+    ('A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N',
+    'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '*')
+
+    >>> bmap_sitestr = BinaryMap(func_scores_sitestr_df, sites_as_str=True)
+    >>> bmap_sitestr.all_subs
+    ['M1A', 'M1C', 'A2C', 'A2*', 'K3A', 'L3aT']
+    >>> bmap_sitestr.binary_sites
+    array(['1', '1', '2', '2', '3', '3a'], dtype='<U2')
+    >>> type(bmap_sitestr.binary_variants) == scipy.sparse.csr_matrix
+    True
+    >>> bmap_sitestr.binary_variants.toarray()
+    array([[0, 0, 0, 0, 0, 0],
+           [1, 0, 0, 0, 0, 0],
+           [0, 1, 0, 0, 1, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 1, 0],
+           [0, 0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0, 1]], dtype=int8)
+
     """
 
     def __eq__(self, other):
@@ -376,12 +418,14 @@ class BinaryMap:
         cols_optional=True,
         alphabet=AAS_WITHSTOP,
         allowed_subs=None,
+        sites_as_str=False,
         expand=False,
         wtseq=None,
     ):
         """Initialize object; see main class docstring."""
         self.nvariants = len(func_scores_df)
         self.alphabet = tuple(alphabet)
+        self.sites_as_str = bool(sites_as_str)
 
         for col, attr, dtype, lim_min, lim_max in [
             (func_score_col, "func_scores", float, None, None),
@@ -430,7 +474,11 @@ class BinaryMap:
             else:
                 raise ValueError(f"invalid alphabet character: {char}")
         chars = "|".join(chars)
-        self._sub_regex = rf"(?P<wt>{chars})" rf"(?P<site>\d+)" rf"(?P<mut>{chars})"
+        if self.sites_as_str:
+            site_regex = r"(?P<site>\d+[a-z]?)"
+        else:
+            site_regex = r"(?P<site>\d+)"
+        self._sub_regex = rf"(?P<wt>{chars})" + site_regex + rf"(?P<mut>{chars})"
 
         # build mapping from substitution to binary map index
         wts = {}
@@ -457,6 +505,8 @@ class BinaryMap:
         self._wt_indices = {}  # keyed by site, values wildtype indices
         self.binary_sites = []
         if expand:
+            if self.sites_as_str:
+                raise ValueError("cannot use both `expand` and `sites_as_str`")
             if allowed_subs is not None:
                 raise ValueError("cannot use both `expand` and `allowed_subs`")
             if not isinstance(wtseq, str):
@@ -488,13 +538,16 @@ class BinaryMap:
                 raise ValueError("`wtseq` should be None if `expand` is False")
             i = 0
             char_order = {c: i for i, c in enumerate(self.alphabet)}
-            for site, wt in sorted(wts.items()):
+            for site, wt in natsort.natsorted(wts.items()):
                 for mut in sorted(muts[site], key=lambda m: char_order[m[-1]]):
                     self.binary_sites.append(site)
                     self._i_to_sub[i] = f"{wt}{site}{mut}"
                     i += 1
         self.binarylength = len(self._i_to_sub)
-        self.binary_sites = numpy.array(self.binary_sites, dtype=int)
+        self.binary_sites = numpy.array(
+            self.binary_sites,
+            dtype=str if self.sites_as_str else int,
+        )
         self._sub_to_i = {sub: i for i, sub in self._i_to_sub.items()}
         self._wt_index_set = set(self._wt_indices.values())
         assert len(self._sub_to_i) == len(self._i_to_sub) == self.binarylength
@@ -567,7 +620,11 @@ class BinaryMap:
             )
         if m.group("wt") == m.group("mut"):
             raise ValueError(f"wildtype and mutant identity the same in {sub}")
-        return (m.group("wt"), int(m.group("site")), m.group("mut"))
+        if self.sites_as_str:
+            site = m.group("site")
+        else:
+            site = int(m.group("site"))
+        return (m.group("wt"), site, m.group("mut"))
 
     def binary_to_sub_str(self, binary):
         """Convert binary representation to space-delimited substitutions.

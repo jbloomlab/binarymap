@@ -8,6 +8,8 @@ The format is based on `Keep a Changelog <https://keepachangelog.com>`_.
 
 0.5
 ---
+- Added ``sites_as_str`` option to ``BinaryMap`` to enable non-integer site numbers (e.g., "214a").
+
 - ``black`` formatting of code.
 
 0.4
