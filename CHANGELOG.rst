@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on `Keep a Changelog <https://keepachangelog.com>`_.
 
+0.6
+---
+- Allow negative site numbers.
+
 0.5
 ---
 - Added ``sites_as_str`` option to ``BinaryMap`` to enable non-integer site numbers (e.g., "214a").

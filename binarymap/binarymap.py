@@ -475,9 +475,9 @@ class BinaryMap:
                 raise ValueError(f"invalid alphabet character: {char}")
         chars = "|".join(chars)
         if self.sites_as_str:
-            site_regex = r"(?P<site>\d+[a-z]?)"
+            site_regex = r"(?P<site>\-?\d+[a-z]?)"
         else:
-            site_regex = r"(?P<site>\d+)"
+            site_regex = r"(?P<site>\-?\d+)"
         self._sub_regex = rf"(?P<wt>{chars})" + site_regex + rf"(?P<mut>{chars})"
 
         # build mapping from substitution to binary map index
@@ -538,7 +538,7 @@ class BinaryMap:
                 raise ValueError("`wtseq` should be None if `expand` is False")
             i = 0
             char_order = {c: i for i, c in enumerate(self.alphabet)}
-            for site, wt in natsort.natsorted(wts.items()):
+            for site, wt in natsort.natsorted(wts.items(), alg=natsort.ns.SIGNED):
                 for mut in sorted(muts[site], key=lambda m: char_order[m[-1]]):
                     self.binary_sites.append(site)
                     self._i_to_sub[i] = f"{wt}{site}{mut}"
