@@ -131,13 +131,13 @@ class BinaryMap:
         Length of the binary representation of each variant.
     nvariants : int
         Number of variants.
-    binary_variants : scipy.sparse.csr_matrix of dtype int8
-        Sparse matrix of shape `nvariants` by `binarylength`. Row
+    binary_variants : scipy.sparse.csr_array of dtype int8
+        Sparse array of shape `nvariants` by `binarylength`. Row
         `binary_variants[ivariant]` gives the binary representation of
         variant `ivariant`, and `binary_variants[ivariant, i]` is 1
         if the variant has the substitution :meth:`BinaryMap.i_to_sub`
         and 0 otherwise. To convert to dense `numpy.ndarray`, use
-        `toarray` method of the sparse matrix.
+        `toarray` method of the sparse array.
     binary_sites : numpy.ndarray
         Array of length `binarylength` giving the site number corresponding
         to each mutation in the binary order. Entries or int or str depending
@@ -197,7 +197,7 @@ class BinaryMap:
     array([ 0.  , -0.2 , -0.4 ,  0.01, -0.05, -1.2 ])
     >>> binmap.func_scores_var
     array([0.2 , 0.1 , 0.3 , 0.15, 0.1 , 0.4 ])
-    >>> type(binmap.binary_variants) == scipy.sparse.csr_matrix
+    >>> type(binmap.binary_variants) == scipy.sparse.csr_array
     True
     >>> binmap.binary_variants.toarray()
     array([[0, 0, 0, 0, 0],
@@ -352,7 +352,7 @@ class BinaryMap:
     ['M1A', 'M1C', 'A2C', 'A2*', 'K3A', 'L3aT']
     >>> bmap_sitestr.binary_sites
     array(['1', '1', '2', '2', '3', '3a'], dtype='<U2')
-    >>> type(bmap_sitestr.binary_variants) == scipy.sparse.csr_matrix
+    >>> type(bmap_sitestr.binary_variants) == scipy.sparse.csr_array
     True
     >>> bmap_sitestr.binary_variants.toarray()
     array([[0, 0, 0, 0, 0, 0],
@@ -383,19 +383,19 @@ class BinaryMap:
 
         """
         # following here: https://stackoverflow.com/a/390640
-        if type(other) != type(self):
+        if type(other) is not type(self):
             return False
         elif self.__dict__.keys() != other.__dict__.keys():
             return False
         else:
             for key, val in self.__dict__.items():
                 val2 = getattr(other, key)
-                if type(val) != type(val2):
+                if type(val) is not type(val2):
                     return False
                 elif isinstance(val, numpy.ndarray):
                     if not numpy.array_equal(val, val2):
                         return False
-                elif isinstance(val, scipy.sparse.csr_matrix):
+                elif isinstance(val, scipy.sparse.csr_array):
                     if (val - val2).nnz:
                         return False
                 elif isinstance(val, (pd.DataFrame, pd.Series)):
@@ -559,7 +559,7 @@ class BinaryMap:
             for isub in self.sub_str_to_indices(subs):
                 row_ind.append(ivariant)
                 col_ind.append(isub)
-        self.binary_variants = scipy.sparse.csr_matrix(
+        self.binary_variants = scipy.sparse.csr_array(
             (numpy.ones(len(row_ind), dtype="int8"), (row_ind, col_ind)),
             shape=(self.nvariants, self.binarylength),
             dtype="int8",
