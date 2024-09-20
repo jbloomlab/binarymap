@@ -79,11 +79,9 @@ If these are not installed, install them with::
 
     pip install -r test_requirements.txt
 
-Then use flake8_ to `lint the code <https://en.wikipedia.org/wiki/Lint_%28software%29>`_ by running::
+Then use `ruff <https://github.com/astral-sh/ruff>`_ to `lint the code <https://en.wikipedia.org/wiki/Lint_%28software%29>`_ by running::
 
-    flake8
-
-If you need to change the flake8_ configuration, edit the `.flake8 <.flake8>`_ file.
+    ruff check .    
 
 Then run the tests with pytest_ by running::
 
@@ -91,17 +89,9 @@ Then run the tests with pytest_ by running::
 
 If you need to change the pytest_ configuration, edit the `pytest.ini <pytest.ini>`_ file.
 
-Automated testing on Travis
-+++++++++++++++++++++++++++
-The aforementioned flake8_ and pytest_ tests will be run automatically by the Travis_ continuous integration system as specified in the `.travis.yml <.travis.yml>`_ file.
-Note that running the Travis_ tests requires you to register the project with Travis_.
-
-If the tests are passing, you will see this on the Travis_ badge on GitHub repo main page.
-
-Slack notifications of test results
-+++++++++++++++++++++++++++++++++++++
-You can configure Travis_ to provide automatic Slack notifications of the test results.
-To do that, follow the `instructions here <https://docs.travis-ci.com/user/notifications/#configuring-slack-notifications>`_.
+Automated testing Github Actions
++++++++++++++++++++++++++++++++++
+The aforementioned tests are run automatically by Github actions as specified in `.github/workflows/test.yml <.github/workflows/test.yml>`_.
 
 
 Building documentation
@@ -125,8 +115,6 @@ Finally, upload to PyPI_ with twine_ as `described here <https://github.com/pypa
 Note that this requires you to have registered the package on PyPI_ if this is the first version of the package there.
 
 .. _pytest: https://docs.pytest.org
-.. _flake8: http://flake8.pycqa.org
-.. _Travis: https://docs.travis-ci.com
 .. _PyPI: https://pypi.org/
 .. _pip: https://pip.pypa.io
 .. _sphinx: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html

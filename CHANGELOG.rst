@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on `Keep a Changelog <https://keepachangelog.com>`_.
 
+0.7
+---
+- Test with GitHub Actions rather than Travis, lint with ``ruff`` rather than ``flake8``.
+
 0.6
 ---
 - Allow negative site numbers.

@@ -69,7 +69,7 @@ master_doc = "index"
 # General information about the project.
 project = "binarymap"
 copyright = f"2019--{datetime.datetime.now().year}"  # noqa: A001
-author = "`the Bloom lab <https://research.fhcrc.org/bloom/en.html>`_"
+author = "`the Bloom lab <https://jbloomlab.org>`_"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -193,7 +193,7 @@ latex_documents = [
         master_doc,
         "binarymap.tex",
         "binarymap Documentation",
-        "`the Bloom lab <https://research.fhcrc.org/bloom/en.html>`_",
+        "`the Bloom lab <https://jbloomlab.org/>`_",
         "manual",
     ),
 ]
