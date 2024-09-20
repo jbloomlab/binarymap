@@ -1,8 +1,8 @@
 .*
 ~*
 
-!.gitignore
-!.travis.yml
+!.git*
+
 !.flake8
 !.nojekyll
 

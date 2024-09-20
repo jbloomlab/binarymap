@@ -4,9 +4,8 @@ binarymap
 
 .. image:: https://img.shields.io/pypi/v/binarymap.svg
         :target: https://pypi.python.org/pypi/binarymap
-
-.. image:: https://app.travis-ci.com/jbloomlab/binarymap.svg
-        :target: https://app.travis-ci.com/github/jbloomlab/binarymap
+.. image:: https://github.com/jbloomlab/binarymap/actions/workflows/test.yml/badge.svg
+        :target: https://github.com/jbloomlab/binarymap/actions/workflows/test.yml
 
 Bbinary representation of protein or nucleotide sequences.
 
