@@ -9,6 +9,7 @@ The format is based on `Keep a Changelog <https://keepachangelog.com>`_.
 0.7
 ---
 - Test with GitHub Actions rather than Travis, lint with ``ruff`` rather than ``flake8``.
+- Switch ``scipy`` sparse matrices to arrays (see [this issue](https://github.com/jbloomlab/binarymap/issues/6)).
 
 0.6
 ---
