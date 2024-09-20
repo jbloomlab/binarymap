@@ -383,14 +383,14 @@ class BinaryMap:
 
         """
         # following here: https://stackoverflow.com/a/390640
-        if type(other) != type(self):
+        if type(other) is type(self):
             return False
         elif self.__dict__.keys() != other.__dict__.keys():
             return False
         else:
             for key, val in self.__dict__.items():
                 val2 = getattr(other, key)
-                if type(val) != type(val2):
+                if type(val) is type(val2):
                     return False
                 elif isinstance(val, numpy.ndarray):
                     if not numpy.array_equal(val, val2):

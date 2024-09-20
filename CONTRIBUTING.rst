@@ -79,11 +79,9 @@ If these are not installed, install them with::
 
     pip install -r test_requirements.txt
 
-Then use flake8_ to `lint the code <https://en.wikipedia.org/wiki/Lint_%28software%29>`_ by running::
+Then use `ruff <https://github.com/astral-sh/ruff>`_ to `lint the code <https://en.wikipedia.org/wiki/Lint_%28software%29>`_ by running::
 
-    flake8
-
-If you need to change the flake8_ configuration, edit the `.flake8 <.flake8>`_ file.
+    ruff check .    
 
 Then run the tests with pytest_ by running::
 
@@ -117,7 +115,6 @@ Finally, upload to PyPI_ with twine_ as `described here <https://github.com/pypa
 Note that this requires you to have registered the package on PyPI_ if this is the first version of the package there.
 
 .. _pytest: https://docs.pytest.org
-.. _flake8: http://flake8.pycqa.org
 .. _PyPI: https://pypi.org/
 .. _pip: https://pip.pypa.io
 .. _sphinx: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
