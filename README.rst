@@ -10,7 +10,7 @@ binarymap
 
 Bbinary representation of protein or nucleotide sequences.
 
-``binarymap`` is a Python package written by `the Bloom lab <https://research.fhcrc.org/bloom/en.html>`_.
+``binarymap`` is a Python package written by `the Bloom lab <https://jbloomlab.org>`_.
 
 The source code is `on GitHub <https://github.com/jbloomlab/binarymap>`_.
 
