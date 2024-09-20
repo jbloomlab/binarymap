@@ -1,6 +1,5 @@
 """Setup script for ``binarymap``."""
 
-
 import re
 import sys
 

@@ -17,7 +17,6 @@ using a :class:`BinaryMap`.
 
 """
 
-
 import collections
 import re
 
