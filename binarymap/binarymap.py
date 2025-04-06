@@ -110,7 +110,7 @@ class BinaryMap:
         option.
     sites_as_str : bool
         Site numbers are str rather than int. If you use this option, you
-        are allowed to have sites with a lowercase letter suffix (e.g., "214a") as
+        are allowed to have sites as arbitrary strings (e.g., "214a") as
         sometimes arise when a protein is being numbered in alignment with a reference.
     expand : bool
         If `False` (the default) the encoding only covers substitutions
@@ -474,7 +474,7 @@ class BinaryMap:
                 raise ValueError(f"invalid alphabet character: {char}")
         chars = "|".join(chars)
         if self.sites_as_str:
-            site_regex = r"(?P<site>\-?\d+[a-z]?)"
+            site_regex = r"(?P<site>.+)"
         else:
             site_regex = r"(?P<site>\-?\d+)"
         self._sub_regex = rf"(?P<wt>{chars})" + site_regex + rf"(?P<mut>{chars})"

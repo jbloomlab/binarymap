@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on `Keep a Changelog <https://keepachangelog.com>`_.
 
+0.8
+---
+- When using ``sites_as_str``, sites can be arbitrary strings.
+
 0.7
 ---
 - Test with GitHub Actions rather than Travis, lint with ``ruff`` rather than ``flake8``.
